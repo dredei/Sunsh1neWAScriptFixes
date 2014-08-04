@@ -1,0 +1,834 @@
+﻿//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+///////////////////НАЧАЛО НАСТРОЕК////////////////////
+//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+/* Если вам что-либо непонятно, то здесь(http://forum.waspace.net/topic/4269-wascript-poiskoviksaitobychnoe-zadanie/) 
+вы всегда сможете задать вопрос)) */
+
+var SearchEngine:=0;  //Укажите индекс(цифру) поисковика. 0 - случайно, 1-google, 2-yandex, 3 - mail, 4 - rambler, 5 -bing
+var per_g,per_y,per_m,per_r,per_b,percent,arr_i:integer;  //менять не надо
+var zapros,log_str:string;  //менять не надо
+var end_page:=3;  //Указать на скольки страницах искать сайт
+var ar_y,ar_g,ar_m,ar_r,ar_b,url_txt_requests:array of string;  //менять не надо
+
+//  если вы указали, чтобы поисковик выбирался случайным образом, то ниже надо указать процент выбора поисковика (в сумме должно быть 100 :) )
+//  ноль тоже можно указывать
+per_g:=40;  // процет Google
+per_y:=30;  // процет Yandex
+per_m:=20;  // процет Mail
+per_r:=5;  // процет Rambler
+per_b:=5;  // процет Bing
+
+/* Теперь поисковые запросы можно хранить в текстовых файлах на хостинге. Как мне кажется, это удобнее.
+ так же если вы храните ПЗ в текстовый файлах, то у каждого из них будет саморегулируемый приоритет.
+ Если "на пальцах", то если по ПЗ xxx скрипт нашел ваш сайт, то приоритет вырастает, и в следующий
+ раз у запроса xxx больше шансов выпасть */
+ 
+url_txt_requests.add('http://mysite.ru/google_requests.txt');  //Указать ссылку на txt файл с запросами для google
+url_txt_requests.add('http://mysite.ru/yandex_requests.txt');  //Указать ссылку на txt файл с запросами для yandex
+url_txt_requests.add('http://mysite.ru/mail_requests.txt');  //Указать ссылку на txt файл с запросами для mail
+url_txt_requests.add('http://mysite.ru/rambler_requests.txt');  //Указать ссылку на txt файл с запросами для rambler
+url_txt_requests.add('http://mysite.ru/bing_requests.txt');  //Указать ссылку на txt файл с запросами для bing
+
+/* Для авто-приоритета вам необходимо установить php скрипт на свой хостинг, ничего сложного в этом нет*/
+
+//  укажите настройки авто-приоритета
+var url_se_prior:='http://mysite.ru/search_requests.php';  //укажите ссылку на скрипт
+var req_f_pass:='qwerty';  //укажите пароль для доступа к файлу. Он должен соответствовать паролю в php скрипте
+
+var es:=GetExtSource('http://mysite.ru/123.txt'); //Указать ссылку на ВИ, из которого будут браться пути, рефереры и прочее
+var domen:='mysite.ru'; //Указать домен сайта(без http://)
+var mask:='a|href|page';  //Указать маску для клика. указать в формате 'тэг|атрибут|значение атрибута'. Если маска не нужна, очистите поле в ковычках
+var mask2:='';  //Альтернативная маска, на случай, если первая будет отсутствовать на странице. Если маска не нужна, очистите поле в ковычках
+var clickunder=false;  //Если на сайте установлен кликандер - true, если не установлен - false.
+var custom_after_path:=false; //Если пути после клика(After Paths) указанны в формате 'тэг|атрибут|значение атрибута'  - true, если стандартные - false.
+var z_count_min:=2;  // минимальное количество раз наведения мыши на разные объекты, во время нахождения на сайте
+var z_count_max:=5;  // максимальное количество раз наведения мыши на разные объекты, во время нахождения на сайте
+var time_read_max:=2500;  //максимальное время(в миллисекундах(1 сек=1000 мил..сек)) между движениями мыши, при нахождении на сайте(посетитель типа читает или рассматривает материал)
+var time_read_min:=800;  //минимальное время(в миллисекундах(1 сек=1000 мил..сек)) между движениями мыши, при нахождении на сайте(посетитель типа читает или рассматривает материал)
+DeleteExtensionFilter('.gif'); //для того чтобы убрать загрузку картинок ".gif" - удалите эту строчку полностью
+DeleteExtensionFilter('.jpg'); //для того чтобы убрать загрузку картинок ".jpg" - удалите эту строчку полностью
+DeleteExtensionFilter('.png'); //для того чтобы убрать загрузку картинок ".png" - удалите эту строчку полностью
+DeleteExtensionFilter('.jpeg'); //для того чтобы убрать загрузку картинок ".jpeg" - удалите эту строчку полностью
+DeleteExtensionFilter('.tiff'); //для того чтобы убрать загрузку картинок ".tiff" - удалите эту строчку полностью
+
+// Настройки логирования
+var logirovanie:=false;  // указать true, если хотите, чтобы лог писался в файл (подробнее http://forum.waspace.net/topic/4269-wascript-poiskoviksaitobychnoe-zadanie/)
+// параметры ниже нужно указывать, если вы хотите, чтобы лог писался в файл и если указали logirovanie:=true
+var link_POST_form:='http://mysite.ru/log.php';  //ссылка на php страницу
+var POST_pass:='12345';  //указать пароль, точно такой же, как в файле log.php 
+var fname:='log.txt';  //указать имя файла, в который будет писаться лог
+
+// ЛИ
+var li_test:=true; /* если поставить true, то скрипт перед основным выполнением зайдет
+на один из сайтов из ТОП 30 LiveInternet. Возможно, это будет благоприятно виять на статитику ЛИ.
+Если поставить false, то он никуда не будет заходить и сразу зайдет на поисковик*/
+//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+///////////////////КОНЕЦ НАСТРОЕК/////////////////////
+//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+var url_whoer:=geturl('http://whoer.net/');
+cutleft(url_whoer,'<div class="ipadotted"> ');
+var country:=cutleft(url_whoer,'<');
+log('Страна: '+country);
+if es.useragent <> '' then
+  begin
+    SetUserAgent(es.useragent);
+    Log('UserAgent: '+es.useragent);
+  end;
+if (SearchEngine=0) then
+  begin
+    percent:=randomint(100)+1;
+    if (per_g+per_y+per_m+per_r+per_b) = 100 then
+      begin
+        if (percent > 0) and (percent <= per_g) then
+          SearchEngine:=1
+        else
+          if (percent > per_g) and (percent <= per_g+per_y) then
+            SearchEngine:=2
+          else
+            if (percent > per_g+per_y) and (percent <= per_g+per_y+per_m) then
+              SearchEngine:=3
+            else
+              if (percent > per_g+per_y+per_m) and (percent <= per_g+per_y+per_m+per_r) then
+                SearchEngine:=4
+              else
+                if (percent > per_g+per_y+per_m+per_r) and (percent <= per_g+per_y+per_m+per_r+per_b) then
+                  SearchEngine:=5;
+      end;
+  end;
+var fname_request:=url_txt_requests[SearchEngine-1];
+repeat
+  cutleft(fname_request,'/');
+until(ExecRegExpr('/',fname_request)=false);
+geturl(url_se_prior+'?pass='+req_f_pass+'&fname='+fname_request);
+if li_test = true then
+  begin
+    var li_html_top30:=geturl('http://www.liveinternet.ru/rating/ru/');
+    var top30_links:array of string;
+    if li_html_top30<>'' then
+      begin
+        repeat
+          cutleft(li_html_top30,'<tr valign="top" class="high"');
+          if li_html_top30<>'' then
+            begin
+              cutleft(li_html_top30,'href="');
+              top30_links.add(cutleft(li_html_top30,'"'));
+            end;
+        until(li_html_top30='');
+        if length(top30_links) = 30 then
+          begin
+            loaduri(top30_links[randomint(length(top30_links))]);
+            closetab(0);
+            wait(1500);
+          end else
+          begin
+            log('Парсинг с ЛИ работает некорректно');
+          end;
+      end;
+  end;
+var SearchEngine_name:array of string;
+SearchEngine_name.add('Google');
+SearchEngine_name.add('Yandex');
+SearchEngine_name.add('Mail');
+SearchEngine_name.add('Rambler');
+SearchEngine_name.add('Bing');
+log('Поисковик: '+SearchEngine_name[SearchEngine-1]);
+
+ //  парсинг ПЗ с файла
+function GetRequestIndex(arr_requests:array of string) : integer;
+begin
+    var test_arr:array of array of integer;
+    test_arr.setlength(length(arr_requests));
+    for var i:=0 to length(test_arr)-1 do
+      begin
+        test_arr[i].setlength(3);
+      end;
+    for var i:=0 to length(test_arr)-1 do
+      begin
+        var tmp_request:=cutleft(arr_requests[i],'{');
+        test_arr[i,1]:=strtoint(cutleft(arr_requests[i],','));
+        test_arr[i,2]:=strtoint(cutleft(arr_requests[i],'}'));
+        arr_requests[i]:=tmp_request;
+        var tmp_float:=floattostr(test_arr[i,2]/test_arr[i,1]);
+        if ExecRegExpr(',',tmp_float) then
+          begin
+            cutleft(tmp_float,',');
+            if length(tmp_float)=1 then
+              test_arr[i,0]:=strtoint(tmp_float+'00');
+            if length(tmp_float)=2 then
+              test_arr[i,0]:=strtoint(tmp_float+'0');
+            if length(tmp_float)>2 then
+              test_arr[i,0]:=strtoint(tmp_float[1]+tmp_float[2]+tmp_float[3]);
+          end else
+            test_arr[i,0]:=1000;
+      end;
+    var int_to_rand:=0;
+    for var i:=0 to length(test_arr)-1 do
+      int_to_rand:=int_to_rand+test_arr[i,0];
+    var percent:=randomint(int_to_rand)+1;
+    for var i:=0 to length(test_arr)-1 do
+      begin
+        var per_at:=0;
+        var per_to:=0;
+        if i>0 then
+        for var i2:=0 to i-1 do
+          begin
+            per_at:=per_at+test_arr[i2,0];
+          end;
+        for var i2:=0 to i do
+          begin
+            per_to:=per_to+test_arr[i2,0];
+          end;
+        if (percent > per_at) and (percent <= per_to) then
+          result:=i;
+      end;
+  end;
+  
+
+var all_txt_requests:=geturl(url_txt_requests[SearchEngine-1]);
+var ind_zaprosa:integer;
+if ExecRegExpr('404 Not Found',all_txt_requests) = false then
+  begin
+    var arr_requests:=SplitRegExpr('\n',all_txt_requests);
+    ind_zaprosa:=GetRequestIndex(arr_requests);
+    zapros:=arr_requests[ind_zaprosa]; 
+  end else
+  stopexecution;
+// конец парсинга ПЗ с файла
+
+var task_error:boolean;
+if SearchEngine = 1 then
+  begin
+    log('Запрос: '+zapros);
+    var url_ps:='http://www.google.ru/';
+    if country = 'Ukraine' then
+      url_ps:='http://www.google.com.ua/';
+    LoadURI(url_ps);
+    selectall;
+    DeleteSelected;
+    TypeIn(zapros);
+    presskey(13);
+    presskey(13);
+    Waitloaded(7000);
+    var test:=GetElement('a');
+    while test.varname = '' do
+      begin
+        wait(3000);
+        test:=GetElement('a');
+      end;
+    var page = 1;
+    var domain:=GetElement('a',0,['href'],[domen],false);
+    while domain.varname = '' do
+      begin
+        log('Сайт не найден на странице '+inttostr(page));
+        page:=page+1;
+        if page > end_page then
+          begin
+            geturl(url_se_prior+'?pass='+req_f_pass+'&fname='+fname_request+'&rtc='+inttostr(ind_zaprosa)+'&found=0');
+            StopExecution;
+          end;
+        var nextpage:=GetElement('a',0,['id'],['pnnext'],true);
+        ClickElement(nextpage);
+        Waitloaded(10000);
+        domain:=GetElement('a',0,['href'],[domen],false);
+      end;
+    var loc:=getlocation;
+    var loc2:=getlocation;
+    repeat
+      ClickElement(domain);
+      waitloaded(6000);
+      loc2:=getlocation;
+    until(loc.host <> loc2.host);
+  end;
+  
+if SearchEngine = 2 then
+  begin
+    log('Запрос: '+zapros);
+    var url_ps:='http://yandex.ru/';
+    if country = 'Ukraine' then
+      url_ps:='http://yandex.ua/';
+    LoadURI(url_ps);
+    selectall;
+    DeleteSelected;
+    TypeIn(zapros);
+    presskey(13);
+    presskey(13);
+    Waitloaded(10000);
+    var test:=GetElement('a');
+    while test.varname = '' do
+      begin
+        wait(3000);
+        test:=GetElement('a');
+      end;
+    var page = 1;
+    var domain:=GetElement('a',0,['href'],[domen],false);
+    while domain.varname = '' do
+      begin
+        log('Сайт не найден на странице '+inttostr(page));
+        page:=page+1;
+        if page > end_page then
+          begin
+            geturl(url_se_prior+'?pass='+req_f_pass+'&fname='+fname_request+'&rtc='+inttostr(ind_zaprosa)+'&found=0');
+            StopExecution;
+          end;
+        var nextpage:=GetElement('a',0,['class'],['pager__button_kind_next'],false);
+        var test_el:=getelement('a',0,['class'],['button_checked_yes'],false);
+        var test_text_attr_BEFORE:=getelementattribute(test_el,'href');
+        ClickElement(nextpage);
+        test_el:=getelement('a',0,['class'],['button_checked_yes'],false);
+        var test_text_attr_AFTER:=getelementattribute(test_el,'href');
+        if (test_text_attr_AFTER<>'') and (test_text_attr_BEFORE<>'') then
+          begin
+            repeat
+              test_el:=getelement('a',0,['class'],['button_checked_yes'],false);
+              test_text_attr_AFTER:=getelementattribute(test_el,'href');
+              wait(10);
+            until(test_text_attr_AFTER<>test_text_attr_BEFORE);
+          end else
+          begin
+            wait(4000);
+          end;
+        domain:=GetElement('a',0,['href'],[domen],false);
+      end;
+    var loc:=getlocation;
+    var loc2:=getlocation;
+    repeat
+      ClickElement(domain);
+      waitloaded(6000);
+      loc2:=getlocation;
+    until(loc.host <> loc2.host);
+  end;
+
+if SearchEngine = 3 then
+  begin
+    log('Запрос: '+zapros);
+    var url_ps:='http://mail.ru/';
+    LoadURI(url_ps);
+    selectall;
+    DeleteSelected;
+    TypeIn(zapros);
+    presskey(13);
+    presskey(13);
+    Waitloaded(10000);
+    var test:=GetElement('a');
+    while test.varname = '' do
+      begin
+        wait(3000);
+        test:=GetElement('a');
+      end;
+    var page = 1;
+    var domain:=GetElement('a',0,['href'],[domen],false);
+    while domain.varname = '' do
+      begin
+        log('Сайт не найден на странице '+inttostr(page));
+        page:=page+1;
+        if page > end_page then
+          begin
+            geturl(url_se_prior+'?pass='+req_f_pass+'&fname='+fname_request+'&rtc='+inttostr(ind_zaprosa)+'&found=0');
+            StopExecution;
+          end;
+        var nextpage:=GetElement('a',0,['id'],['paginator_next'],true);
+        ClickElement(nextpage);
+        Waitloaded(10000);
+        domain:=GetElement('a',0,['href'],[domen],false);
+      end;
+    var loc:=getlocation;
+    var loc2:=getlocation;
+    repeat
+      ClickElement(domain);
+      waitloaded(6000);
+      loc2:=getlocation;
+    until(loc.host <> loc2.host);
+  end;
+
+if SearchEngine = 4 then
+  begin
+    log('Запрос: '+zapros);
+    var url_ps:='http://www.rambler.ru/';
+    LoadURI(url_ps);
+    var input_query:=getelement('input',-1,['id'],['search_query'],true);
+    movetoelement(input_query,0,5,10,10);
+    mousedown;
+    mouseup;
+    movetoelement(input_query,0,5,15,15);
+    mousedown;
+    mouseup;
+    selectall;
+    DeleteSelected;
+    TypeIn(zapros);
+    presskey(13);
+    presskey(13);
+    Waitloaded(10000);
+    var test:=GetElement('a');
+    while test.varname = '' do
+      begin
+        wait(3000);
+        test:=GetElement('a');
+      end;
+    var page = 1;
+    var domain:=GetElement('a',0,['href'],[domen],false);
+    while domain.varname = '' do
+      begin
+        log('Сайт не найден на странице '+inttostr(page));
+        page:=page+1;
+        if page > end_page then
+          begin
+            geturl(url_se_prior+'?pass='+req_f_pass+'&fname='+fname_request+'&rtc='+inttostr(ind_zaprosa)+'&found=0');
+            StopExecution;
+          end;
+        var nextpage:=GetElement('a',0,['onmouseup'],['page_next'],false);
+        var test_el:=getelement('a',0,['onmouseup'],["sendStat('serp','title_1'"],false);
+        var test_text_attr_BEFORE:=getelementattribute(test_el,'href');
+        ClickElement(nextpage);
+        wait(2000);
+        test_el:=getelement('a',0,['onmouseup'],["sendStat('serp','title_1'"],false);
+        var test_text_attr_AFTER:=getelementattribute(test_el,'href');
+        if (test_text_attr_AFTER<>'') and (test_text_attr_BEFORE<>'') then
+          begin
+            repeat
+              test_el:=getelement('a',0,['onmouseup'],["sendStat('serp','title_1'"],false);
+              test_text_attr_AFTER:=getelementattribute(test_el,'href');
+              wait(10);
+            until(test_text_attr_AFTER<>test_text_attr_BEFORE);
+          end else
+          begin
+            wait(4000);
+          end;
+        domain:=GetElement('a',0,['href'],[domen],false);
+      end;
+    var loc:=getlocation;
+    var loc2:=getlocation;
+    repeat
+      ClickElement(domain);
+      waitloaded(6000);
+      loc2:=getlocation;
+    until(loc.host <> loc2.host);
+  end;
+
+if SearchEngine = 5 then
+  begin
+    log('Запрос: '+zapros);
+    var url_ps:='http://www.bing.com/?cc=ru';
+    if country = 'Ukraine' then
+      url_ps:='http://www.bing.com/?cc=ua';
+    LoadURI(url_ps);
+    selectall;
+    DeleteSelected;
+    TypeIn(zapros);
+    presskey(13);
+    presskey(13);
+    Waitloaded(10000);
+    var test:=GetElement('a');
+    while test.varname = '' do
+      begin
+        wait(3000);
+        test:=GetElement('a');
+      end;
+    var page = 1;
+    var domain:=GetElement('a',0,['href'],[domen],false);
+    while domain.varname = '' do
+      begin
+        log('Сайт не найден на странице '+inttostr(page));
+        page:=page+1;
+        if page > end_page then
+          begin
+            geturl(url_se_prior+'?pass='+req_f_pass+'&fname='+fname_request+'&rtc='+inttostr(ind_zaprosa)+'&found=0');
+            StopExecution;
+          end;
+        var nextpage:=GetElement('a',0,['class'],['sb_pagN'],true);
+        ClickElement(nextpage);
+        Waitloaded(10000);
+        domain:=GetElement('a',0,['href'],[domen],false);
+      end;
+    var loc:=getlocation;
+    var loc2:=getlocation;
+    repeat
+      ClickElement(domain);
+      waitloaded(6000);
+      loc2:=getlocation;
+    until(loc.host <> loc2.host);
+  end;
+geturl(url_se_prior+'?pass='+req_f_pass+'&fname='+fname_request+'&rtc='+inttostr(ind_zaprosa)+'&found=1');
+wait(3000);
+waitloaded(10000);
+var atribute1:=CutLeft(mask,'|');
+var atribute2:=CutLeft(mask,'|');
+var atribute1_2:=CutLeft(mask2,'|');
+var atribute2_2:=CutLeft(mask2,'|');
+var href_attr_ar:array of string;
+if length(es.exmasks)<>0 then
+  begin
+    for var i_ar:=0 to length(es.exmasks)-1 do
+      begin
+        if execregexpr('\|',es.exmasks[i_ar]) then
+          begin
+            var tmp_attribute:=cutleft(es.exmasks[i_ar],'|');
+            href_attr_ar.add(tmp_attribute);
+          end else
+            href_attr_ar.add('href');
+      end;
+  end;
+function GetTextRegExpr(main_text:string; reg_expr:string) : array of string;
+  begin
+    var pieces := SplitRegExpr(reg_expr,main_text);
+    cutleft(main_text,pieces[0]);
+    for var i:=1 to pieces.Count - 1 do
+      begin
+        var tmp_text:=cutleft(main_text,pieces[i]);
+        if tmp_text<>'' then
+          result.add(tmp_text);
+      end;
+  end;
+
+
+procedure SearchOnSite;
+  begin
+    if randomint(100)>97 then
+      begin
+        var el_body:=getelement('body',0);
+        if el_body.varname <>'' then
+          begin
+            var html_body:=getelementattribute(el_body,'innerhtml');
+            if html_body <>'' then
+              begin
+                var ar_texts:=GetTextRegExpr(html_body,'(<br>|-->|<br />|<p>|</p>|<b>|</b>)([^<]){4,}(<!--|<span>|</span>|<br>|<br />|<p>|</p>|<b>|</b>)');
+                if ar_texts.Count > 1 then
+                  begin
+                    var to_int:=10;
+                    if to_int>ar_texts.Count - 1 then
+                      to_int:=ar_texts.Count - 1;
+                    for var i:=0 to ar_texts.Count - 1 do
+                      begin
+                        cutleft(ar_texts[i],'>');
+                        ar_texts[i]:=cutleft(ar_texts[i],'<');
+                      end;
+                    var ar_texts_good:array of string;
+                    for var i:=0 to to_int do
+                      begin
+                        repeat
+                          var tmp_text:=ar_texts[i];
+                          if ExecRegExpr('[^\s;,.:"/!?@*()$]{2,}( )[^\s&;,.:"/!?@*()]{2,}',tmp_text) then
+                            begin
+                              var cut_1:=cutleft(tmp_text,' ');
+                              var cut_2:=cutleft(tmp_text,' ');
+                              if (ExecRegExpr('[^\s;,.:"!?@*()]{2,}( )[^\s;,.:"!?@*()]{2,}',cut_1+' '+cut_2)) and (ExecRegExpr('[;,.:"!?@*()]',cut_1+' '+cut_2) = false) then
+                                begin
+                                  ar_texts_good.add(cut_1+' '+cut_2);
+                                end;
+                              cutleft(ar_texts[i],' ');
+                            end;
+                        until(ExecRegExpr('[^\s;,.:"/!?@*()]{2,}( )[^\s;,.:"/!?@*()]{2,}',ar_texts[i]) = false);
+                      end;
+                    if ar_texts_good.count>1 then
+                      begin
+                        var text_to_search:=ar_texts_good[randomint(length(ar_texts_good))];
+                        var el_search:=getelement('input',-1,['name'],['s'],true);  //wordpress
+                        if el_search.varname='' then
+                          el_search:=getelement('input',-1,['name'],['story'],true);  //DLE
+                        if el_search.varname='' then
+                          el_search:=getelement('input',-1,['name'],['keys'],true);  //Drupal
+                        if el_search.varname='' then
+                          el_search:=getelement('input',-1,['name'],['searchword'],true);  //Joomla
+                        if el_search.varname='' then
+                          el_search:=getelement('input',-1,['type'],['text'],true);  //случайный input
+                        if el_search.varname <>'' then
+                          begin
+                            clickelement(el_search);
+                            wait(randomint(400)+200);
+                            typein(ar_texts_good[randomint(length(ar_texts_good))]);
+                            wait(randomint(400)+200);
+                            presskey(13);
+                            waitloaded(12000);
+                          end;
+                      end;
+                  end;
+              end;
+          end;
+      end;
+  end;
+function MoveEmulation(z_count_min:integer;z_count_max:integer;time_read_min:integer;time_read_max:integer) : boolean;
+  begin
+    var x:=0;
+    var z:=randomint(z_count_max-z_count_min)+z_count_min;
+    while x<z do
+      begin
+        var body_el_move:=getelement('body',0);
+        if body_el_move.varname <> '' then
+          begin
+            var html_body_move:=getelementattribute(body_el_move,'innerhtml');
+            if html_body_move <> '' then
+              begin
+                var tags_arr:array of string;
+                tags_arr.add('div','input','span','br','p','a');
+                var rand_i_tag:=randomint(length(tags_arr));
+                var repeat_i:=0;
+                repeat
+                  rand_i_tag:=randomint(length(tags_arr));
+                  repeat_i:=repeat_i+1;
+                until(ExecRegExpr('(<'+tags_arr[rand_i_tag]+'.+){4,}',html_body_move) or (repeat_i>=20));
+                if ExecRegExpr('(<'+tags_arr[rand_i_tag]+'.+){4,}',html_body_move) then
+                  begin
+                    var move:=GetElement(tags_arr[rand_i_tag]);
+                    var testRect:=GetElementRect(move);
+                    repeat_i:=0;
+                    repeat
+                      move:=GetElement(tags_arr[rand_i_tag]);
+                      testRect:=GetElementRect(move);
+                      if (testRect.bottom<0) then
+                        testRect.bottom:=testRect.bottom*-1;
+                      if (testRect.top<0) then
+                        testRect.top:=testRect.top*-1;
+                      repeat_i:=repeat_i+1;
+                      if repeat_i >= 7 then
+                        begin
+                          if randomint(2)>0 then
+                          move:=GetElement else
+                          move:=GetElement('div');
+                          testRect:=GetElementRect(move);
+                        end;
+                    until (testRect.bottom<6000) and (testRect.top<6000);
+                    repeat_i:=0;
+                    if randomint(5)+1<3 then
+                      begin
+                        scrolltoelement(move);
+                      end else
+                      begin
+                        MoveToElement(move);
+                      end;
+                    if randomint(10)>8 then
+                    repeat
+                      wait(randomint(200)+100);
+                      mousewheel(0,-100);
+                    until(randomint(10)<9);
+                    if randomint(10)>7 then
+                      begin
+                        var dim := GetClientSize;
+                        repeat
+                          wait(randomint(200)+100);
+                          MoveToPoint(randomint(dim.x-100),randomint(dim.y-100));
+                        until(randomint(10)<8);
+                      end;
+                  end;
+              end;
+          end;
+        wait(randomint(time_read_max-time_read_min)+time_read_min);
+        x:=x+1;
+      end;
+  end;
+
+var test:=GetElement('div');
+while test.varname = '' do
+  begin
+    wait(1000);
+    test:=GetElement('div');
+  end;
+moveEmulation(z_count_min,z_count_max,time_read_min,time_read_max);
+var i:integer;
+Log('Пути до клика:');
+
+for I := 0 to Length(es.path) - 1 do
+  begin
+    Log('Путь: '+es.path[i]);
+    if clickunder = true  then
+      begin
+        var path:TCSElement;
+        if (length(es.exmasks)<>0) and (length(es.exmasks)=length(href_attr_ar)) then
+          begin
+            path:=GetInternalLink(-1,['href'],[es.path[i]],false,href_attr_ar,es.exmasks);
+          end else
+        path:=GetInternalLink(-1,['href'],[es.path[i]],false);
+        var link_path:=getelementattribute(path,'href');
+        log('Ссылка пути: '+link_path);
+        ClickElement(path);
+      end
+    else
+      begin
+        var path:TCSElement;
+        if (length(es.exmasks)<>0) and (length(es.exmasks)=length(href_attr_ar)) then
+          begin
+            path:=GetInternalLink(-1,['href'],[es.path[i]],false,href_attr_ar,es.exmasks);
+          end else
+        path:=GetInternalLink(-1,['href'],[es.path[i]],false);
+        var link_path:=getelementattribute(path,'href');
+        log('Ссылка пути: '+link_path);
+        ClickElement(path);
+      end;
+    waitloaded(5000);
+    test:=GetElement('a');
+    while test.varname = '' do
+      begin
+        wait(1000);
+        test:=GetElement('a');
+      end;
+    moveEmulation(z_count_min,z_count_max,time_read_min,time_read_max);
+    SearchOnSite;
+  end; 
+if clickunder = true  then
+  begin
+    LoadURI(domen+es.page,es.referer);
+    test:=GetElement('a');
+    while test.varname = '' do
+      begin
+        wait(1000);
+        test:=GetElement('a');
+      end;
+    moveEmulation(z_count_min,z_count_max,time_read_min,time_read_max);
+    Log('Пути до клика:');
+    for I := 0 to Length(es.path) - 1 do
+      begin
+        Log('Путь: '+es.path[i]);
+        var path:TCSElement;
+        if (length(es.exmasks)<>0) and (length(es.exmasks)=length(href_attr_ar)) then
+          begin
+            path:=GetInternalLink(-1,['href'],[es.path[i]],false,href_attr_ar,es.exmasks);
+          end else
+        path:=GetInternalLink(-1,['href'],[es.path[i]],false);
+        var link_path:=getelementattribute(path,'href');
+        log('Ссылка пути: '+link_path);
+        ClickElement(path);
+        waitloaded(5000);
+        test:=GetElement('a');
+        while test.varname = '' do
+          begin
+            wait(1000);
+           test:=GetElement('a');
+          end;
+        moveEmulation(z_count_min,z_count_max,time_read_min,time_read_max);
+        SearchOnSite;
+      end;
+  end;
+if mask <> '' then
+  begin
+    var drug:TCSElement;
+    if (length(es.exmasks)<>0) and (length(es.exmasks)=length(href_attr_ar)) then
+      drug:=GetElement(atribute1,-1,[atribute2],[mask],false,href_attr_ar,es.exmasks) else
+      drug:=GetElement(atribute1,-1,[atribute2],[mask],false);
+    if drug.varname <> '' then
+      begin
+        ClickElement(drug);
+        Log('Клик по маске');
+        waitloaded(8000);
+        test:=GetElement('a');
+        while test.varname = '' do
+          begin
+            wait(1000);
+            test:=GetElement('a');
+          end;
+        moveEmulation(z_count_min,z_count_max,time_read_min,time_read_max);
+        Log('Пути после клика:');
+        if custom_after_path = false then
+          begin
+            var p:integer;
+            for p := 0 to Length(es.AfterPath) - 1 do
+              begin
+                Log('Путь пк: '+es.AfterPath[p]);
+                var Afterpath:=GetElement('a',-1,['href'],[es.AfterPath[p]],false);
+                ClickElement(Afterpath);
+                waitloaded(5000);
+                test:=GetElement('a');
+                while test.varname = '' do
+                  begin
+                    wait(1000);
+                    test:=GetElement('a');
+                  end;
+                moveEmulation(z_count_min,z_count_max,time_read_min,time_read_max);
+              end;
+          end
+        else
+          begin
+            var p:integer;
+            for p := 0 to Length(es.AfterPath) - 1 do
+              begin
+                Log('Путь пк: '+es.AfterPath[p]);
+                var AfterPath_atr1:=CutLeft(es.AfterPath[p],'|');
+                var AfterPath_atr2:=CutLeft(es.AfterPath[p],'|');
+                if (AfterPath_atr2 = '') and (es.AfterPath[p] = '') then
+                  begin
+                    es.AfterPath[p]:=AfterPath_atr1;
+                    AfterPath_atr1:='a';
+                    AfterPath_atr2:='href';
+                  end;
+                var Afterpath:=GetElement(AfterPath_atr1,-1,[AfterPath_atr2],[es.AfterPath[p]],false);
+                ClickElement(Afterpath);
+                waitloaded(5000);
+                wait(1000);
+                test:=GetElement('a');
+                while test.varname = '' do
+                  begin
+                    wait(1000);
+                    test:=GetElement('a');
+                  end;
+                moveEmulation(z_count_min,z_count_max,time_read_min,time_read_max);
+              end;
+          end;
+      end
+    else
+        begin
+          if mask2 <> '' then
+            begin
+              Log('Маска1 не найдена');
+              var drug2:TCSElement;
+              if (length(es.exmasks)<>0) and (length(es.exmasks)=length(href_attr_ar)) then
+                drug2:=GetElement(atribute1_2,-1,[atribute2_2],[mask2],false,href_attr_ar,es.exmasks) else
+                drug2:=GetElement(atribute1_2,-1,[atribute2_2],[mask2],false);
+              if drug2.varname <> '' then
+                begin
+                  ClickElement(drug2);
+                  Log('Клик по маске2');
+                  waitloaded(8000);
+                  test:=GetElement('a');
+                  while test.varname = '' do
+                    begin
+                      wait(1000);
+                      test:=GetElement('a');
+                    end;
+                  moveEmulation(z_count_min,z_count_max,time_read_min,time_read_max);
+                  Log('Пути после клика:');
+                  var p:integer;
+                  for p := 0 to Length(es.AfterPath) - 1 do
+                    begin
+                      Log('Путь пк: '+es.AfterPath[p]);
+                      var Afterpath:=GetElement('a',-1,['href'],[es.AfterPath[p]],false);
+                      ClickElement(Afterpath);
+                      waitloaded(5000);
+                      test:=GetElement('a');
+                      while test.varname = '' do
+                        begin
+                          wait(1000);
+                          test:=GetElement('a');
+                        end;
+                      moveEmulation(z_count_min,z_count_max,time_read_min,time_read_max);
+                    end;
+                end
+                else
+                  begin
+                    Log('Обе маски не найдены');
+                    task_error:=true;
+                  end;
+            end
+            else
+              begin
+                Log('Маска не найдена');
+                task_error:=true;
+              end;
+        end;
+  end;
+Log('Стоп');
+Log('Времени прошло: '+IntToStr(runingtime)+' сек');
+var messages := GetLog;
+if logirovanie = true then
+  begin
+    for arr_i:=0 to length(messages)-1 do
+      begin
+        log_str:=log_str+'{![space]!}'+messages[arr_i];
+      end;
+    var send_post_form:=PostForm(link_POST_form+'?password='+POST_pass+'&fname='+fname,['user'],[log_str]);
+    log(send_post_form);
+  end;
+if task_error=true then
+  begin
+    Stopexecution;
+  end;
