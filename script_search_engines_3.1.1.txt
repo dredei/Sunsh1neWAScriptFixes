@@ -274,7 +274,7 @@ if SearchEngine = 2 then
             geturl(url_se_prior+'?pass='+req_f_pass+'&fname='+fname_request+'&rtc='+inttostr(ind_zaprosa)+'&found=0');
             StopExecution;
           end;
-        var nextpage:=GetElement('a',0,['class'],['pager__button_kind_next'],false);
+        var nextpage:=JQueryGetElement('.pager__group > a:last',0);
         var test_el:=getelement('a',0,['class'],['button_checked_yes'],false);
         var test_text_attr_BEFORE:=getelementattribute(test_el,'href');
         ClickElement(nextpage);
