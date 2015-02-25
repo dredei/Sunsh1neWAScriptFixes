@@ -251,6 +251,8 @@ if SearchEngine = 2 then
     if country = 'Ukraine' then
       url_ps:='http://yandex.ua/';
     LoadURI(url_ps);
+	var queryInput = GetElement('input',0,['id'],['text']);
+	ClickElement(queryInput);
     selectall;
     DeleteSelected;
     TypeIn(zapros);
